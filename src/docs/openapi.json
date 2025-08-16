@@ -1,0 +1,160 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Chatwoot Integration API",
+    "version": "1.0.0",
+    "description": "API para integrar com o Chatwoot, permitindo receber webhooks, enviar mensagens e escutar eventos via SSE."
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Healthcheck",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string" },
+                    "time": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chatwoot/messages/send": {
+      "post": {
+        "summary": "Enviar mensagem",
+        "description": "Envia uma mensagem para uma conversa existente ou cria um contato e conversa novos antes de enviar.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "conversationId": { "type": "integer", "nullable": true },
+                  "contact": {
+                    "type": "object",
+                    "nullable": true,
+                    "properties": {
+                      "name": { "type": "string" },
+                      "email": { "type": "string", "format": "email" },
+                      "phone": { "type": "string" }
+                    }
+                  },
+                  "content": { "type": "string" },
+                  "attachments": {
+                    "type": "array",
+                    "items": { "type": "string", "format": "uri" },
+                    "nullable": true
+                  }
+                },
+                "required": [ "content" ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Mensagem enviada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "conversationId": { "type": "integer" },
+                    "messageId": { "type": "string" },
+                    "content": { "type": "string" },
+                    "sentAt": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": { "type": "array", "items": { "type": "string" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/webhook/chatwoot": {
+      "post": {
+        "summary": "Webhook do Chatwoot",
+        "description": "Recebe eventos de webhook do Chatwoot e os encaminha para o EventBus interno.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Webhook processado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "received": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Assinatura inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events/stream": {
+      "get": {
+        "summary": "Escuta de eventos via SSE",
+        "description": "Mantém uma conexão aberta e envia eventos recebidos via webhook para os clientes em tempo real.",
+        "responses": {
+          "200": {
+            "description": "Fluxo de eventos iniciado",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "example": "event: message.created\ndata: { ... }\n\n"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

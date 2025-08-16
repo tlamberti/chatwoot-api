@@ -1,0 +1,44 @@
+# =========================
+# Node / TypeScript
+# =========================
+node_modules/
+dist/
+build/
+tmp/
+temp/
+*.tsbuildinfo
+
+# =========================
+# Env (não versionar segredos)
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# Logs / Cobertura
+# =========================
+logs/
+*.log
+*.log.*
+coverage/
+.nyc_output/
+jest-*/ 
+coverage-final.json
+
+# =========================
+# Editors / SO
+# =========================
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# =========================
+# Diversos
+# =========================
+pnpm-debug.log*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

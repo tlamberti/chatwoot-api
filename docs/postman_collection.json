@@ -1,0 +1,48 @@
+{
+  "info": {
+    "name": "Chatwoot API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/health"
+      }
+    },
+    {
+      "name": "Enviar mensagem",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"contact\": {\"name\": \"Maria\", \"email\": \"maria@example.com\"},\n  \"content\": \"Olá! Como posso ajudar?\"\n}"
+        },
+        "url": "{{base_url}}/chatwoot/messages/send"
+      }
+    },
+    {
+      "name": "Webhook (exemplo)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"event\": \"message.created\",\n  \"data\": {\"content\": \"Olá\"}\n}"
+        },
+        "url": "{{base_url}}/webhook/chatwoot"
+      }
+    }
+  ],
+  "event": [],
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:4000" }
+  ]
+}
