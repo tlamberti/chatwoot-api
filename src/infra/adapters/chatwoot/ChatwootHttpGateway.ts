@@ -180,12 +180,11 @@ export class ChatwootHttpGateway implements ChatwootGateway {
       throw new Error('InboxId inválido ao criar conversa');
     }
 
-    // source_id precisa ser string; use o identifier se existir, senão o id do contato
-    const sourceId = String(contact.identifier ?? contact.id);
+    // Para canais como WhatsApp, o source_id deve ser o WA ID (telefone E.164).
+    // Fallbacks: identifier → id do contato.
+    const sourceId = String(contact.phoneNumber ?? contact.identifier ?? contact.id);
 
-    // 1) GARANTIR contact_inbox (vínculo do contato com a inbox)
-    //    POST /api/v1/accounts/{account_id}/contacts/{contact_id}/contact_inboxes
-    //    body: { inbox_id, source_id }
+    // 1) Garantir contact_inbox (vínculo do contato à inbox/canal)
     try {
       await this.http.post(
         `/api/v1/accounts/${this.accountId}/contacts/${contact.id}/contact_inboxes`,
@@ -194,19 +193,19 @@ export class ChatwootHttpGateway implements ChatwootGateway {
           source_id: sourceId
         }
       );
-      logger.debug({ contactId: contact.id, inboxId }, 'Contact inbox garantido no Chatwoot');
+      logger.debug({ contactId: contact.id, inboxId, sourceId }, 'Contact inbox garantido no Chatwoot');
     } catch (err: any) {
-      // se já existe, o Chatwoot pode retornar 422; seguimos em frente
       const status = err?.response?.status;
       if (status !== 422) {
-        logger.error({ err: err?.response?.data }, 'Erro ao garantir contact_inbox');
+        logger.error({ err: err?.response?.data, contactId: contact.id, inboxId }, 'Erro ao garantir contact_inbox');
         throw new Error('Falha ao vincular contato à inbox no Chatwoot');
+      } else {
+        // 422 geralmente significa "já existe"; seguimos o fluxo
+        logger.warn({ contactId: contact.id, inboxId }, 'contact_inbox já existia; seguindo');
       }
     }
 
-    // 2) CRIAR CONVERSA
-    //    POST /api/v1/accounts/{account_id}/conversations
-    //    body: { source_id, inbox_id, contact_id }
+    // 2) Criar conversa
     try {
       const { data } = await this.http.post(
         `/api/v1/accounts/${this.accountId}/conversations`,
@@ -219,20 +218,23 @@ export class ChatwootHttpGateway implements ChatwootGateway {
 
       const conversation: Conversation = {
         id: Number(data.id),
-        contactId: Number(contact.id),
-        inboxId: Number(inboxId),
+        contactId: Number(data.contact_id ?? contact.id),
+        inboxId: Number(data.inbox_id ?? inboxId),
         status: data.status
       };
+
       logger.debug(
         { conversationId: conversation.id, contactId: conversation.contactId },
         'Conversa criada/garantida no Chatwoot'
       );
+
       return conversation;
     } catch (err: any) {
-      logger.error({ err: err?.response?.data }, 'Erro ao criar conversa no Chatwoot');
+      logger.error({ err: err?.response?.data, contactId: contact.id, inboxId }, 'Erro ao criar conversa no Chatwoot');
       throw new Error('Falha ao criar conversa no Chatwoot');
     }
   }
+
 
   /**
    * Envia uma mensagem para uma conversa existente.
